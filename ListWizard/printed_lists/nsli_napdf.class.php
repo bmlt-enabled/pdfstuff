@@ -56,9 +56,9 @@ class nsli_napdf extends flex_napdf {
 		/// These are the parameters that we send over to the root server, in order to get our meetings.
 		$this->out_http_vars = array ( 'services' => array (  ///< We will be asking for meetings in specific Service Bodies.
                                                             1001,	///< SSAASC
-//                                                             1002,	///< NASC
+                                                            1002,	///< NASC
                                                             1003,	///< ELIASC
-//                                                             1004,	///< SSSAC
+                                                            1004,	///< SSSAC
 														    1067    ///< NSLI
 											               ),
 										'sort_key' => 'time'        
