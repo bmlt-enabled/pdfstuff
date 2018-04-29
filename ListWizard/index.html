@@ -25,6 +25,10 @@
                             uri += 'two-fold-tabloid';
                             pages = '';
                         break;
+                        case 'two-fold-usletter':
+                            uri += 'two-fold-us-letter';
+                            pages = '';
+                        break;
                         case 'usletter-l':
                             uri += 'us-letter&orientation=l';
                         break;
@@ -181,6 +185,17 @@
                             </div>
                         </div>
                         <div class="selectionBlock">
+                            <h4>Tabloid Landscape</h4>
+                            <div class="choiceBlock">
+                                <input type="radio" name="layout" value="tabloid-l" id="layout-tabloid-l" />
+                                <label for="layout-tabloid-l" class="thumbnail-label">
+                                    <img src="images/TabloidLandscape.png" alt="Taboid Icon" height="62px" class="thumbnail" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="selectionLine">
+                        <div class="selectionBlock">
                             <h4>Tabloid Two-Fold</h4>
                             <div class="choiceBlock">
                                 <input type="radio" name="layout" value="two-fold-tabloid" id="two-fold-tabloid" checked="checked" />
@@ -190,11 +205,11 @@
                             </div>
                         </div>
                         <div class="selectionBlock">
-                            <h4>Tabloid Landscape</h4>
+                            <h4>US Letter Two-Fold</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="tabloid-l" id="layout-tabloid-l" />
-                                <label for="layout-tabloid-l" class="thumbnail-label">
-                                    <img src="images/TabloidLandscape.png" alt="Taboid Icon" height="62px" class="thumbnail" />
+                                <input type="radio" name="layout" value="two-fold-usletter" id="two-fold-usletter" />
+                                <label for="layout-two-fold-usletter" class="thumbnail-label">
+                                    <img src="images/USLetterTwoFold.png" alt="US Letter Icon" height="48px" class="thumbnail" />
                                 </label>
                             </div>
                         </div>
