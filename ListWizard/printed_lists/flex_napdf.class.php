@@ -230,10 +230,12 @@ class flex_napdf extends printableList {
                 $this->pos['start'] = TRUE;
                 $this->pos['count'] = 0;
                 
+                $extra_margin = $this->foursection ? $listpage['margin'] : 0;
+                
                 if ($this->twofold) {
                     if ($this->foursection) {
                         $this->font_size = $variable_font_size;
-                        $this->DrawListPage ($listpage['margin'], $listpage['margin'], $listpage['width'], $listpage['height'], $listpage['margin'], $this->list_page_sections);
+                        $this->DrawListPage ($listpage['margin'], $listpage['margin'], $listpage['width'] - $extra_margin, $listpage['height'], $listpage['margin'], $this->list_page_sections);
                     }
                     $this->DrawRearPanel ($fixed_font_size, $frontpanel_x_offset, $frontpanel_y_offset, $fright, $frontpanel_max_y_offset);
                     $frontpanel_x_offset = $fright + $listpage['margin'];
@@ -246,9 +248,9 @@ class flex_napdf extends printableList {
                     $this->napdf_instance->AddPage ();
                     $pages++;
                     $this->font_size = $variable_font_size;
-                    $this->DrawListPage ($listpage['margin'], $listpage['margin'], $listpage['width'], $listpage['height'], $listpage['margin'], $this->list_page_sections);
+                    $this->DrawListPage ($listpage['margin'], $listpage['margin'], $listpage['width'] - $extra_margin, $listpage['height'], $listpage['margin'], $this->list_page_sections);
                     if ($this->foursection) {
-                        $this->DrawListPage ($frontleft, $listpage['margin'], $frontright - $listpage['margin'], $listpage['height'], $listpage['margin'], $this->list_page_sections);
+                        $this->DrawListPage ($frontleft, $listpage['margin'], $frontright - $extra_margin, $listpage['height'], $listpage['margin'], $this->list_page_sections);
                     }
                 }
                 
