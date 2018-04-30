@@ -14,6 +14,26 @@
                 return result;
             };
             
+            function evaluateUI() {
+                if (!findGetParameter('GIMME')) {
+                    document.getElementById('throbber-container').style.display = 'none';
+                    document.getElementById('pickerForm').style.display = 'block';
+                    
+                    if (document.getElementById('two-fold-tabloid').checked) {
+                        document.getElementById('column-container').style.display = 'block';
+                        document.getElementById('pages-container').style.display = 'none';
+                    } else {
+                        if (document.getElementById('two-fold-us-letter').checked) {
+                            document.getElementById('column-container').style.display = 'none';
+                            document.getElementById('pages-container').style.display = 'none';
+                        } else {
+                            document.getElementById('column-container').style.display = 'block';
+                            document.getElementById('pages-container').style.display = 'block';
+                        };
+                    };
+                };
+            };
+            
             function handleGimme() {
                 if (findGetParameter('GIMME')) {
                     document.getElementById('throbber-container').style.display = 'block';
@@ -25,7 +45,7 @@
                             uri += 'two-fold-tabloid';
                             pages = '';
                         break;
-                        case 'two-fold-usletter':
+                        case 'two-fold-us-letter':
                             uri += 'two-fold-us-letter';
                             pages = '';
                         break;
@@ -138,7 +158,7 @@
                         <div class="selectionBlock">
                             <h4>US Letter Portrait</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="usletter-p" id="layout-usletter-p" />
+                                <input type="radio" name="layout" value="usletter-p" id="layout-usletter-p" onchange="evaluateUI()" />
                                 <label for="layout-usletter-p" class="thumbnail-label">
                                     <img src="images/USLetter.png" alt="US Letter Icon" width="48px" class="thumbnail" />
                                 </label>
@@ -147,7 +167,7 @@
                         <div class="selectionBlock">
                             <h4>US Letter Landscape</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="usletter-l" id="layout-usletter-l" />
+                                <input type="radio" name="layout" value="usletter-l" id="layout-usletter-l" onchange="evaluateUI()" />
                                 <label for="layout-usletter-l" class="thumbnail-label">
                                     <img src="images/USLetterLandscape.png" alt="US Letter Icon" height="48px" class="thumbnail" />
                                 </label>
@@ -158,7 +178,7 @@
                         <div class="selectionBlock">
                             <h4>US Legal Portrait</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="uslegal-p" id="layout-uslegal-p" />
+                                <input type="radio" name="layout" value="uslegal-p" id="layout-uslegal-p" onchange="evaluateUI()" />
                                 <label for="layout-uslegal-p" class="thumbnail-label">
                                     <img src="images/USLegal.png" alt="US Legal Icon" width="48px" class="thumbnail" />
                                 </label>
@@ -167,7 +187,7 @@
                         <div class="selectionBlock">
                             <h4>US Legal Landscape</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="uslegal-l" id="layout-uslegal-l" />
+                                <input type="radio" name="layout" value="uslegal-l" id="layout-uslegal-l" onchange="evaluateUI()" />
                                 <label for="layout-uslegal-l" class="thumbnail-label">
                                     <img src="images/USLegalLandscape.png" alt="US Legal Icon" height="48px" class="thumbnail" />
                                 </label>
@@ -178,7 +198,7 @@
                         <div class="selectionBlock">
                             <h4>Tabloid Portrait</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="tabloid-p" id="layout-tabloid" />
+                                <input type="radio" name="layout" value="tabloid-p" id="layout-tabloid" onchange="evaluateUI()" />
                                 <label for="layout-tabloid" class="thumbnail-label">
                                     <img src="images/Tabloid.png" alt="Taboid Icon" width="62px" class="thumbnail" />
                                 </label>
@@ -187,7 +207,7 @@
                         <div class="selectionBlock">
                             <h4>Tabloid Landscape</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="tabloid-l" id="layout-tabloid-l" />
+                                <input type="radio" name="layout" value="tabloid-l" id="layout-tabloid-l" onchange="evaluateUI()" />
                                 <label for="layout-tabloid-l" class="thumbnail-label">
                                     <img src="images/TabloidLandscape.png" alt="Taboid Icon" height="62px" class="thumbnail" />
                                 </label>
@@ -198,7 +218,7 @@
                         <div class="selectionBlock">
                             <h4>Tabloid Two-Fold</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="two-fold-tabloid" id="two-fold-tabloid" checked="checked" />
+                                <input type="radio" name="layout" value="two-fold-tabloid" id="two-fold-tabloid" checked="checked" onchange="evaluateUI()" />
                                 <label for="layout-two-fold-tabloid" class="thumbnail-label">
                                     <img src="images/TabloidTwoFold.png" alt="Taboid Icon" width="34px" class="thumbnail" />
                                 </label>
@@ -207,8 +227,8 @@
                         <div class="selectionBlock">
                             <h4>US Letter Two-Fold</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="two-fold-usletter" id="two-fold-usletter" />
-                                <label for="layout-two-fold-usletter" class="thumbnail-label">
+                                <input type="radio" name="layout" value="two-fold-us-letter" id="two-fold-us-letter" onchange="evaluateUI()" />
+                                <label for="layout-two-fold-us-letter" class="thumbnail-label">
                                     <img src="images/USLetterTwoFold.png" alt="US Letter Icon" height="48px" class="thumbnail" />
                                 </label>
                             </div>
@@ -218,7 +238,7 @@
                         <div class="selectionBlock">
                             <h4>Small Chapbook</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="chapbook" id="layout-chapbook" />
+                                <input type="radio" name="layout" value="chapbook" id="layout-chapbook" onchange="evaluateUI()" />
                                 <label for="layout-chapbook" class="thumbnail-label">
                                     <img src="images/Chapbook.png" alt="Chapbook Icon" width="50px" class="thumbnail" />
                                 </label>
@@ -227,7 +247,7 @@
                         <div class="selectionBlock">
                             <h4>Larger Booklet</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="booklet" id="layout-booklet" />
+                                <input type="radio" name="layout" value="booklet" id="layout-booklet" onchange="evaluateUI()" />
                                 <label for="layout-booklet" class="thumbnail-label">
                                     <img src="images/Booklet.png" alt="Booklet Icon" width="50px" class="thumbnail" />
                                 </label>
@@ -235,7 +255,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="layout-container">
+                <div id="column-container" class="layout-container">
                     <div class="selectionLine">
                         <div class="selectionBlock">
                             <h4>1 Column</h4>
@@ -317,7 +337,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="bottom-container">
+                <div class="bottom-container" id="pages-container" style="display:none">
                     <label for="pages-select">Pages:</label>
                     <select name="pages" id="pages-select">
                         <option value="4" selected="selected">4</option>
