@@ -83,6 +83,28 @@ class flex_napdf extends printableList {
                 unset($in_http_vars['orientation']);    ///< We ignore these.
                 unset($in_http_vars['pages']);
                 unset($in_http_vars['columns']);
+            } elseif ('two-fold-us-legal' == strtolower($in_http_vars['layout'])) {
+		        $this->units = 'in';		    ///< The measurement units (inches)
+                $this->page_x = 14;	            ///< The width, in measurement units, of each page
+                $this->page_y = 8.5;            ///< The height, in measurement units, of each page.
+                $this->twofold = TRUE;          ///< We have a special layout for this, as we will fold the paper twice vertically.
+                $this->foursection = TRUE;
+                $this->page_max = 3;            ///< We always have 2 pages, but we say 3, because we are cramming 2 pages into one (the cover).
+                $this->orientation = 'L';
+                $this->list_page_sections = 3;  ///< We always have 3 columns.
+                unset($in_http_vars['orientation']);    ///< We ignore these.
+                unset($in_http_vars['pages']);
+                unset($in_http_vars['columns']);
+            } elseif ('chapbook' == strtolower($in_http_vars['layout'])) {
+		        $this->units = 'in';		    ///< The measurement units (inches)
+                $this->page_x = 5.5;	        ///< The width, in inches, of each page
+                $this->page_y = 8.5;            ///< The height, in inches, of each page.
+                unset($in_http_vars['orientation']);    ///< We ignore the orientation.
+            } elseif ('booklet' == strtolower($in_http_vars['layout'])) {
+		        $this->units = 'in';	        ///< The measurement units (inches)
+                $this->page_x = 4.5;	        ///< The width, in inches, of each page
+                $this->page_y = 8;              ///< The height, in inches, of each page.
+                unset($in_http_vars['orientation']);    ///< We ignore the orientation.
             } elseif ('usletter' == strtolower($in_http_vars['layout'])) {
 		        $this->units = 'in';	        ///< The measurement units (inches)
                 $this->page_x = 8.5;	        ///< The width, in inches, of each page
@@ -95,18 +117,9 @@ class flex_napdf extends printableList {
 		        $this->units = 'in';	        ///< The measurement units (inches)
                 $this->page_x = 11;	            ///< The width, in inches, of each page
                 $this->page_y = 17;             ///< The height, in inches, of each page.
-            } elseif ('chapbook' == strtolower($in_http_vars['layout'])) {
-		        $this->units = 'in';		    ///< The measurement units (inches)
-                $this->page_x = 5.5;	        ///< The width, in inches, of each page
-                $this->page_y = 8.5;            ///< The height, in inches, of each page.
-                unset($in_http_vars['orientation']);    ///< We ignore the orientation.
-            } elseif ('booklet' == strtolower($in_http_vars['layout'])) {
-		        $this->units = 'in';	        ///< The measurement units (inches)
-                $this->page_x = 4.5;	        ///< The width, in inches, of each page
-                $this->page_y = 8;              ///< The height, in inches, of each page.
-                unset($in_http_vars['orientation']);    ///< We ignore the orientation.
             }
         }
+        
         if (isset($in_http_vars['orientation']) && $in_http_vars['orientation']) {
             if ('l' == strtolower($in_http_vars['orientation'])) {
                 $this->orientation = 'L';
@@ -149,7 +162,6 @@ class flex_napdf extends printableList {
                                                                                             'sort_key' => 'time'        
                                                                                         );
 
-// die('<pre>'.htmlspecialchars(print_r($this, true)).'</pre>');
 		parent::__construct ($this->root_uri, $in_http_vars);
 	}
 	
