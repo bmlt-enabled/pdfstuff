@@ -71,7 +71,7 @@ class flex_napdf extends printableList {
                 unset($in_http_vars['orientation']);    ///< We ignore these.
                 unset($in_http_vars['pages']);
                 $this->page_max = 5;            ///< We always have 4 pages, but we say 5, because we are cramming 2 pages into one (the cover).
-                $in_http_vars['columns'] = min(4, intval($in_http_vars['columns']));    ///< Max. 4 columns.
+                $in_http_vars['columns'] = isset($in_http_vars['columns']) ? min(4, intval($in_http_vars['columns'])) : 4;    ///< Max. 4 columns.
             } elseif ('two-fold-us-letter' == strtolower($in_http_vars['layout'])) {
 		        $this->units = 'in';		    ///< The measurement units (inches)
                 $this->page_x = 11;	            ///< The width, in measurement units, of each page
@@ -94,7 +94,7 @@ class flex_napdf extends printableList {
                 $this->orientation = 'L';
                 unset($in_http_vars['orientation']);    ///< We ignore these.
                 unset($in_http_vars['pages']);
-                $in_http_vars['columns'] = min(4, intval($in_http_vars['columns']));    ///< Max. 4 columns.
+                $in_http_vars['columns'] = isset($in_http_vars['columns']) ? min(4, intval($in_http_vars['columns'])) : 4;    ///< Max. 4 columns.
             } elseif ('chapbook' == strtolower($in_http_vars['layout'])) {
 		        $this->units = 'in';		    ///< The measurement units (inches)
                 $this->page_x = 5.5;	        ///< The width, in inches, of each page
