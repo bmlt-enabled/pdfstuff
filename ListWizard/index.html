@@ -66,11 +66,12 @@
                             uri += 'two-fold-tabloid';
                             columns = parseInt(findGetParameter('columns'));
                         break;
-                        case 'two-fold-us-letter':
-                            uri += 'two-fold-us-letter';
-                        break;
                         case 'two-fold-us-legal':
                             uri += 'two-fold-us-legal';
+                            columns = parseInt(findGetParameter('columns'));
+                        break;
+                        case 'two-fold-us-letter':
+                            uri += 'two-fold-us-letter';
                         break;
                         case 'chapbook':
                             uri += 'chapbook';
