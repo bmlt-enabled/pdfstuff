@@ -21,20 +21,30 @@
                     
                     if (document.getElementById('two-fold-tabloid').checked) {
                         document.getElementById('column-container').style.display = 'block';
+                        document.getElementById('moreColumns').style.display = 'none';
                         document.getElementById('pages-container').style.display = 'none';
+                        document.getElementById('columns-4').checked = true;
                     } else {
-                        if (document.getElementById('two-fold-us-letter').checked || document.getElementById('two-fold-us-legal').checked) {
+                        if (document.getElementById('two-fold-us-letter').checked) {
                             document.getElementById('column-container').style.display = 'none';
                             document.getElementById('pages-container').style.display = 'none';
                         } else {
-                            document.getElementById('column-container').style.display = 'block';
-                            document.getElementById('pages-container').style.display = 'block';
-                            if (document.getElementById('layout-chapbook').checked) {
-                                document.getElementById('bottom-container-small').style.display = 'block';
-                                document.getElementById('bottom-container-large').style.display = 'none';
+                            if (document.getElementById('two-fold-us-legal').checked) {
+                                document.getElementById('column-container').style.display = 'block';
+                                document.getElementById('moreColumns').style.display = 'none';
+                                document.getElementById('pages-container').style.display = 'none';
+                                document.getElementById('columns-4').checked = true;
                             } else {
-                                document.getElementById('bottom-container-small').style.display = 'none';
-                                document.getElementById('bottom-container-large').style.display = 'block';
+                                document.getElementById('column-container').style.display = 'block';
+                                document.getElementById('moreColumns').style.display = 'block';
+                                document.getElementById('pages-container').style.display = 'block';
+                                if (document.getElementById('layout-chapbook').checked) {
+                                    document.getElementById('bottom-container-small').style.display = 'block';
+                                    document.getElementById('bottom-container-large').style.display = 'none';
+                                } else {
+                                    document.getElementById('bottom-container-small').style.display = 'none';
+                                    document.getElementById('bottom-container-large').style.display = 'block';
+                                };
                             };
                         };
                     };
@@ -258,43 +268,45 @@
                             </div>
                         </div>
                     </div>
-                    <div class="selectionLine">
-                        <div class="selectionBlock" style="margin-left:1.0em;padding-top:0.25em">
-                            <h4>5 Columns</h4>
-                            <div class="choiceBlock">
-                                <input type="radio" name="columns" value="5" id="columns-5" />
-                                <label for="columns-5" class="thumbnail-label">
-                                    <img src="images/Column-5.png" alt="US Letter Icon" width="48px" class="thumbnail" />
-                                </label>
+                    <div id="moreColumns" style="display:none">
+                        <div class="selectionLine">
+                            <div class="selectionBlock" style="margin-left:1.0em;padding-top:0.25em">
+                                <h4>5 Columns</h4>
+                                <div class="choiceBlock">
+                                    <input type="radio" name="columns" value="5" id="columns-5" />
+                                    <label for="columns-5" class="thumbnail-label">
+                                        <img src="images/Column-5.png" alt="US Letter Icon" width="48px" class="thumbnail" />
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="selectionBlock" style="margin-left:1.0em;padding-top:0.25em">
+                                <h4>6 Columns</h4>
+                                <div class="choiceBlock">
+                                    <input type="radio" name="columns" value="6" id="columns-6" />
+                                    <label for="columns-6" class="thumbnail-label">
+                                        <img src="images/Column-6.png" alt="US Letter Icon" width="48px" class="thumbnail" />
+                                    </label>
+                                </div>
                             </div>
                         </div>
-                        <div class="selectionBlock" style="margin-left:1.0em;padding-top:0.25em">
-                            <h4>6 Columns</h4>
-                            <div class="choiceBlock">
-                                <input type="radio" name="columns" value="6" id="columns-6" />
-                                <label for="columns-6" class="thumbnail-label">
-                                    <img src="images/Column-6.png" alt="US Letter Icon" width="48px" class="thumbnail" />
-                                </label>
+                        <div class="selectionLine">
+                            <div class="selectionBlock" style="margin-left:1.0em;padding-top:0.25em">
+                                <h4>7 Columns</h4>
+                                <div class="choiceBlock">
+                                    <input type="radio" name="columns" value="7" id="columns-7" />
+                                    <label for="columns-7" class="thumbnail-label">
+                                        <img src="images/Column-7.png" alt="US Letter Icon" width="48px" class="thumbnail" />
+                                    </label>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="selectionLine">
-                        <div class="selectionBlock" style="margin-left:1.0em;padding-top:0.25em">
-                            <h4>7 Columns</h4>
-                            <div class="choiceBlock">
-                                <input type="radio" name="columns" value="7" id="columns-7" />
-                                <label for="columns-7" class="thumbnail-label">
-                                    <img src="images/Column-7.png" alt="US Letter Icon" width="48px" class="thumbnail" />
-                                </label>
-                            </div>
-                        </div>
-                        <div class="selectionBlock" style="margin-left:1.0em;padding-top:0.25em">
-                            <h4>8 Columns</h4>
-                            <div class="choiceBlock">
-                                <input type="radio" name="columns" value="8" id="columns-8" />
-                                <label for="columns-8" class="thumbnail-label">
-                                    <img src="images/Column-8.png" alt="US Letter Icon" width="48px" class="thumbnail" />
-                                </label>
+                            <div class="selectionBlock" style="margin-left:1.0em;padding-top:0.25em">
+                                <h4>8 Columns</h4>
+                                <div class="choiceBlock">
+                                    <input type="radio" name="columns" value="8" id="columns-8" />
+                                    <label for="columns-8" class="thumbnail-label">
+                                        <img src="images/Column-8.png" alt="US Letter Icon" width="48px" class="thumbnail" />
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>

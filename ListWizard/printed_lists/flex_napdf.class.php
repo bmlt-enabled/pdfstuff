@@ -91,7 +91,7 @@ class flex_napdf extends printableList {
                 $this->foursection = TRUE;
                 $this->page_max = 3;            ///< We always have 2 pages, but we say 3, because we are cramming 2 pages into one (the cover).
                 $this->orientation = 'L';
-                $this->list_page_sections = 3;  ///< We always have 3 columns.
+                $this->list_page_sections = 4;  ///< We always have 4 columns.
                 unset($in_http_vars['orientation']);    ///< We ignore these.
                 unset($in_http_vars['pages']);
                 unset($in_http_vars['columns']);
