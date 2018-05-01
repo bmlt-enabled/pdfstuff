@@ -251,6 +251,9 @@ class flex_napdf extends printableList {
                     }
                     $this->DrawRearPanel ($fixed_font_size, $frontpanel_x_offset, $frontpanel_y_offset, $fright, $frontpanel_max_y_offset);
                     $frontpanel_x_offset = $fright + $listpage['margin'];
+                    if ($this->foursection) {
+                        $frontpanel_x_offset += $this->page_margins;
+                    }
                     $frontpanel_max_x_offset = $frontright;
                 }
                 
