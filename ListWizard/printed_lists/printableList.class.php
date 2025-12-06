@@ -50,9 +50,12 @@ class printableList {
 									 	$in_lang_search = null	///< An array of language enums, used to extract the correct format codes.
 									)
 	{
-		$this->napdf_instance = napdf::MakeNAPDF ($inRootURI, $this->page_x, $this->page_y, $this->out_http_vars, $this->units, $this->orientation, $this->font, $this->sort_keys, $in_lang_search);
+		$this->napdf_instance = napdf::MakeNAPDF ($inRootURI, $this->page_x, $this->page_y, $this->out_http_vars, $this->units, $this->orientation, 'Helvetica', $this->sort_keys, $in_lang_search);
 		if (!($this->napdf_instance instanceof napdf)) {
+			error_log('printableList: Failed to create napdf instance');
 			$this->napdf_instance = null;
+		} else {
+			error_log('printableList: Successfully created napdf instance with ' . count($this->napdf_instance->meeting_data) . ' meetings');
 		}
 	}
 

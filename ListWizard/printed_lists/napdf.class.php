@@ -27,27 +27,23 @@ class napdf extends FPDF {
     var $my_page_width = 0.0;   ///< The width of the page, in inches.
     
     /**
-        \brief Fetches the CSV data, and loads up our internal data array with all the meeting data. It creates an associative array
+        \brief Fetches the JSON data, and loads up our internal data array with all the meeting data. It creates an associative array
         of the meeting data.
         
         This loads the internal $meeting_data nested array, in which each meeting is one row, then an associative array of meeting data values.
     */
-    private function FetchCSV ( $inRootURI,             ///< The URI of the Root Server we are querying.
+    private function FetchJSON ( $inRootURI,             ///< The URI of the Root Server we are querying.
                                 $in_http_vars = null	///< These contain alternatives to the $_GET and/or $_POST parameters. Default is null.
                                 ) {
-        // First, we get the formats.
-        
         if (!isset ($in_http_vars) || !is_array ($in_http_vars) || !count ($in_http_vars)) {
             $in_http_vars = array ('lang_enum' => $this->lang_search);
         } else {
             $in_http_vars['lang_enum'] = $this->lang_search;
         }
         
-        $format_params = $in_http_vars;
+        $callCurlURL = $inRootURI . 'client_interface/json/?switcher=GetSearchResults';
         
-        $callCurlURL = $inRootURI . 'client_interface/csv/?switcher=GetSearchResults';
-        
-        foreach ($format_params as $key => $value) {
+        foreach ($in_http_vars as $key => $value) {
             if (isset ($value)) {
                 if (is_array ($value)) {
                     if (count ($value)) {
@@ -65,72 +61,27 @@ class napdf extends FPDF {
             }
         }
         
-        $format_data = $this->call_curl ($callCurlURL . '&get_formats_only=1', true);
+        // Get both meetings and formats in a single request
+        $response = $this->call_curl ($callCurlURL . '&get_used_formats=1', false);
         
-        if ($format_data) {
-            $format_data_ar = explode ("\n", $format_data);
-            if (is_array ($format_data_ar) && (count ($format_data_ar) > 1)) {
-                $this->format_data = array();
-                
-                $keys = explode ('","', $format_data_ar[0]);
-                
-                for ($c = 0; $c < count ($keys); $c++) {
-                    $keys[$c] = stripslashes (preg_replace ('/^\"|\"$/', '', $keys[$c]));
-                }
-                
-                $format_data_ar[0] = null;
-                unset ($format_data_ar[0]);
-                
-                foreach ($format_data_ar as $format) {
-                    $format = explode ('","', $format);
-                    if (is_array ($format) && (count ($format) == count ($keys))) {
-                        $fmt = array ();
-                        $count = 0;
-                        foreach ($keys as $key) {
-                            $fmt[$key] = stripslashes (preg_replace ('/^\"|\"$/', '', $format[$count++]));
-                        }
-                        
-                        $this->format_data[$fmt['id'].'_'.$fmt['lang']] = $fmt;
-                    }
-                }
-            }
-        }
-
-        // Next, we get the meetings.
-        $meeting_data = $this->call_curl ($callCurlURL, true);
-
-        if ($meeting_data) {
-            $meeting_data_ar = explode ("\n", $meeting_data);
-        
-            if (is_array ($meeting_data_ar) && (count ($meeting_data_ar) > 1)) {
-                $meeting_data = array();
-                
-                $keys = explode ('","', $meeting_data_ar[0]);
-                
-                for ($c = 0; $c < count ($keys); $c++) {
-                    $keys[$c] = stripslashes (preg_replace ('/^\"|\"$/', '', $keys[$c]));
-                }
-                
-                $meeting_data_ar[0] = null;
-                unset ($meeting_data_ar[0]);
-                
-                foreach ($meeting_data_ar as $meeting) {
-                    if (isset ($meeting) && $meeting) {
-                        $meeting = explode ('","', trim ($meeting, '",'));
-                        $meeting_data_array = array ();
-        
-                        if (is_array ($meeting) && (count ($meeting) == count ($keys))) {
-                            $count = 0;
-                            foreach ($keys as $key) {
-                                $value = trim (stripslashes (preg_replace ('/^\"|\"$/', '', $meeting[$count++])), '"');
-                                $meeting_data_array[$key] = $value;
-                            }
-                        
-                            array_push ($meeting_data, $meeting_data_array);
-                        }
+        if ($response) {
+            $response_data = json_decode ($response, true);
+            
+            if (is_array ($response_data)) {
+                // Extract formats
+                if (isset ($response_data['formats']) && is_array ($response_data['formats'])) {
+                    $this->format_data = array();
                     
-                        $this->meeting_data = $meeting_data;
+                    foreach ($response_data['formats'] as $format) {
+                        if (is_array ($format) && isset ($format['id']) && isset ($format['lang'])) {
+                            $this->format_data[$format['id'].'_'.$format['lang']] = $format;
+                        }
                     }
+                }
+                
+                // Extract meetings
+                if (isset ($response_data['meetings']) && is_array ($response_data['meetings'])) {
+                    $this->meeting_data = $response_data['meetings'];
                 }
             }
         }
@@ -323,7 +274,7 @@ class napdf extends FPDF {
         $this->SetCreator ("BMLT");
         $this->SetSubject ("Printable Meeting List");
         $this->SetTitle ("Printable Meeting List");
-        $this->FetchCSV ($inRootURI, $in_http_vars);
+        $this->FetchJSON ($inRootURI, $in_http_vars);
         // Okay, at this point, we've set up the PDF object, and have done the meeting search. Our meetings are waiting for us to start making the list.
     }
 

@@ -208,69 +208,57 @@ class flex_napdf extends printableList {
                 }
             }
         
-            $fixed_font_size = $this->font_size;
-            $variable_font_size = $this->font_size + 2;
-            
-            if ($this->foursection) {
-                $frontleft = ($this->page_x / 2) + $listpage['margin'];
-                $frontright = $this->page_x - $this->page_margins;
-                $fright = (($frontright - $frontleft) / 2) + $frontleft - $listpage['margin'];
-                $listpage['width'] /= 2.0;
-            } else {
-                $frontleft = $frontpanel_x_offset;
-                $frontright = $frontpanel_max_x_offset;
-                $fright = $frontpanel_max_x_offset / 2;
-            }
-            
-            do {
-                $pages = 0;
+		$fixed_font_size = $this->font_size;
+		$variable_font_size = $this->font_size + 2;
+		$pages = 0;
+		
+		if ($this->foursection) {
+			$frontleft = ($this->page_x / 2) + $listpage['margin'];
+			$frontright = $this->page_x - $this->page_margins;
+			$fright = (($frontright - $frontleft) / 2) + $frontleft - $listpage['margin'];
+			$listpage['width'] /= 2.0;
+		} else {
+			$frontleft = $frontpanel_x_offset;
+			$frontright = $frontpanel_max_x_offset;
+			$fright = $frontpanel_max_x_offset / 2;
+		}
+		
+		$this->napdf_instance->AddPage ();
+		$pages++;
+		
+		$frontpanel_x_offset = $frontleft;
+		$frontpanel_max_x_offset = $frontright;
+		
+		$this->pos['end'] = FALSE;
+		$this->pos['start'] = TRUE;
+		$this->pos['count'] = 0;
+		
+		$extra_margin = $this->foursection ? $listpage['margin'] : 0;
+		
+		if ($this->twofold) {
+			if ($this->foursection) {
+				$this->font_size = $variable_font_size;
+				$this->DrawListPage ($listpage['margin'], $listpage['margin'], $listpage['width'] - $extra_margin, $listpage['height'], $listpage['margin'], $this->list_page_sections);
+			}
+			$this->DrawRearPanel ($fixed_font_size, $frontpanel_x_offset, $frontpanel_y_offset, $fright, $frontpanel_max_y_offset);
+			$frontpanel_x_offset = $fright + $listpage['margin'];
+			if ($this->foursection) {
+				$frontpanel_x_offset += $this->page_margins;
+			}
+			$frontpanel_max_x_offset = $frontright;
+		}
+		
+		$this->DrawFrontPanel ($fixed_font_size, $frontpanel_x_offset, $frontpanel_y_offset, $frontpanel_max_x_offset, $frontpanel_max_y_offset);
 
-                $this->napdf_instance = napdf::MakeNAPDF ($this->root_uri, $this->page_x, $this->page_y, $this->out_http_vars, $this->units, $this->orientation, $this->sort_keys);
-                if (!($this->napdf_instance instanceof napdf))
-                    {
-                    $this->napdf_instance = null;
-                    break;
-                    }
-                
-                $this->napdf_instance->AddPage ();
-                $pages++;
-                
-                $frontpanel_x_offset = $frontleft;
-                $frontpanel_max_x_offset = $frontright;
-        
-                $this->pos['end'] = FALSE;
-                $this->pos['start'] = TRUE;
-                $this->pos['count'] = 0;
-                
-                $extra_margin = $this->foursection ? $listpage['margin'] : 0;
-                
-                if ($this->twofold) {
-                    if ($this->foursection) {
-                        $this->font_size = $variable_font_size;
-                        $this->DrawListPage ($listpage['margin'], $listpage['margin'], $listpage['width'] - $extra_margin, $listpage['height'], $listpage['margin'], $this->list_page_sections);
-                    }
-                    $this->DrawRearPanel ($fixed_font_size, $frontpanel_x_offset, $frontpanel_y_offset, $fright, $frontpanel_max_y_offset);
-                    $frontpanel_x_offset = $fright + $listpage['margin'];
-                    if ($this->foursection) {
-                        $frontpanel_x_offset += $this->page_margins;
-                    }
-                    $frontpanel_max_x_offset = $frontright;
-                }
-                
-                $this->DrawFrontPanel ($fixed_font_size, $frontpanel_x_offset, $frontpanel_y_offset, $frontpanel_max_x_offset, $frontpanel_max_y_offset);
-
-                while (!$this->pos['end']) {
-                    $this->napdf_instance->AddPage ();
-                    $pages++;
-                    $this->font_size = $variable_font_size;
-                    $this->DrawListPage ($listpage['margin'], $listpage['margin'], $listpage['width'] - $extra_margin, $listpage['height'], $listpage['margin'], $this->list_page_sections);
-                    if ($this->foursection) {
-                        $this->DrawListPage ($frontleft, $listpage['margin'], $frontright - $extra_margin, $listpage['height'], $listpage['margin'], $this->list_page_sections);
-                    }
-                }
-                
-                $variable_font_size -= 0.1;
-            } while ($pages >= $this->page_max);
+		while (!$this->pos['end']) {
+			$this->napdf_instance->AddPage ();
+			$pages++;
+			$this->font_size = $variable_font_size;
+			$this->DrawListPage ($listpage['margin'], $listpage['margin'], $listpage['width'] - $extra_margin, $listpage['height'], $listpage['margin'], $this->list_page_sections);
+			if ($this->foursection) {
+				$this->DrawListPage ($frontleft, $listpage['margin'], $frontright - $extra_margin, $listpage['height'], $listpage['margin'], $this->list_page_sections);
+			}
+		}
         }
         
         while ($pages < ($this->page_max - 1)) {
