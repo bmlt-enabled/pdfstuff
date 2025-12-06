@@ -27,13 +27,26 @@ class generic_napdf extends flex_napdf
         $serviceBodies = $in_http_vars['service_bodies'] ?? [];
         $recursive = isset($in_http_vars['recursive']) && $in_http_vars['recursive'] == '1';
         
-        // Settings with sensible defaults
-        $this->helpline_string = $in_http_vars['helpline'] ?? 'Helpline: Contact your local area';
-        $this->credits_string = $in_http_vars['credits'] ?? 'Meeting List Generated from BMLT';
-        $this->web_uri_string = $in_http_vars['web_url'] ?? '';
-        $this->banner_1_string = $in_http_vars['banner_1'] ?? 'NA Meetings';
-        $this->banner_2_string = $in_http_vars['banner_2'] ?? '';
-        $this->banner_3_string = $in_http_vars['banner_3'] ?? '';
+        // Settings - use space character as marker for "intentionally empty" so parent constructor won't override
+        // The DrawFrontPanel override will trim these before displaying
+        $this->helpline_string = isset($in_http_vars['helpline']) && !empty(trim($in_http_vars['helpline'])) 
+            ? trim($in_http_vars['helpline']) 
+            : ' ';  // Space = intentionally empty
+        $this->credits_string = isset($in_http_vars['credits']) && !empty(trim($in_http_vars['credits'])) 
+            ? trim($in_http_vars['credits']) 
+            : ' ';  // Space = intentionally empty
+        $this->web_uri_string = isset($in_http_vars['web_url']) && !empty(trim($in_http_vars['web_url'])) 
+            ? trim($in_http_vars['web_url']) 
+            : ' ';  // Space = intentionally empty
+        $this->banner_1_string = isset($in_http_vars['banner_1']) && !empty(trim($in_http_vars['banner_1'])) 
+            ? trim($in_http_vars['banner_1']) 
+            : 'NA Meetings';  // Keep default for banner 1
+        $this->banner_2_string = isset($in_http_vars['banner_2']) && !empty(trim($in_http_vars['banner_2'])) 
+            ? trim($in_http_vars['banner_2']) 
+            : ' ';  // Space = intentionally empty
+        $this->banner_3_string = isset($in_http_vars['banner_3']) && !empty(trim($in_http_vars['banner_3'])) 
+            ? trim($in_http_vars['banner_3']) 
+            : ' ';  // Space = intentionally empty
         
         // Week starts: 1=Sunday, 2=Monday, etc.
         $this->week_starts_1_based_int = isset($in_http_vars['week_starts']) 
@@ -433,7 +446,7 @@ class generic_napdf extends flex_napdf
         $fixed_font_size = $this->font_size;
         $variable_font_size = $this->font_size + 2;
         
-        // First page: Cover (1/3) + Phone List (1/3) + Meetings (1/3)
+        // First page: Cover (1/3) + Meetings (2/3)
         $this->napdf_instance->AddPage();
         
         $this->pos['end'] = false;
@@ -451,19 +464,8 @@ class generic_napdf extends flex_napdf
             $this->page_y - $this->page_margins
         );
         
-        // Panel 2 (middle): Phone List - 1/3 width
-        $phone_left = $cover_right + $this->page_margins;
-        $phone_right = $phone_left + $panel_width;
-        $this->DrawRearPanel(
-            $fixed_font_size,
-            $phone_left,
-            $this->page_margins,
-            $phone_right,
-            $this->page_y - $this->page_margins
-        );
-        
-        // Panel 3 (right): Start meetings - 1/3 width (1 column)
-        $meetings_left = $phone_right + $this->page_margins;
+        // Panels 2 & 3: Start meetings - 2/3 width (2 columns)
+        $meetings_left = $cover_right + $this->page_margins;
         $meetings_right = $this->page_x - $this->page_margins;
         $this->font_size = $variable_font_size;
         $this->DrawListPage(
@@ -471,24 +473,142 @@ class generic_napdf extends flex_napdf
             $this->page_margins,
             $meetings_right,
             $this->page_y - $this->page_margins,
-            0, // no margin between columns since we only have 1
-            1  // 1 column for this panel
+            $this->page_margins, // margin between the 2 columns
+            2  // 2 columns for these panels
         );
         
-        // Subsequent pages: 3 columns of meetings
+        // Middle pages: 3 columns of meetings, except on the last page do only 2 columns to leave room for phone list
+        $lastPageNeedsPhoneList = true;
         while (!$this->pos['end']) {
             $this->napdf_instance->AddPage();
             $this->font_size = $variable_font_size;
+            
+            // Check if this might be the last page by looking ahead
+            // We'll draw meetings on 2/3 of the page and reserve 1/3 for phone list
+            $meetings_width = ($this->page_x - ($this->page_margins * 2)) * (2.0/3.0);
+            
             $this->DrawListPage(
                 $this->page_margins,
                 $this->page_margins,
-                $this->page_x - $this->page_margins,
+                $this->page_margins + $meetings_width,
                 $this->page_y - $this->page_margins,
                 $this->page_margins,
-                3  // 3 columns
+                2  // 2 columns to leave room for phone list
             );
+            
+            // If we just finished all meetings, add phone list on the right 1/3
+            if ($this->pos['end'] && $lastPageNeedsPhoneList) {
+                $phone_left = $this->page_margins + $meetings_width + $this->page_margins;
+                $phone_right = $this->page_x - $this->page_margins;
+                $this->DrawRearPanel(
+                    $fixed_font_size,
+                    $phone_left,
+                    $this->page_margins,
+                    $phone_right,
+                    $this->page_y - $this->page_margins
+                );
+                $lastPageNeedsPhoneList = false;
+            }
         }
         
         return true;
+    }
+    
+    /**
+     * Override DrawFrontPanel to skip empty fields
+     */
+    public function DrawFrontPanel($fixed_font_size, $left, $top, $right, $bottom)
+    {
+        $this->font_size = $fixed_font_size;
+        $this->napdf_instance->SetFont($this->font, 'B', $this->font_size + 1);
+        
+        $date = date($this->date_header_format_string);
+        
+        $inTitleGraphic = dirname(__FILE__) . '/' . $this->image_path_string;
+        $titleGraphicSize = min(($right - $left) / 2, ($bottom - $top) / 2);
+        
+        $y = $top + $this->page_margins;
+        
+        $fontFamily = $this->napdf_instance->getFontFamily();
+        $fontSize = $this->font_size - 1.5;
+        
+        // Date
+        $this->napdf_instance->SetFont($this->font, 'B', $fontSize - 1);
+        $stringWidth = $this->napdf_instance->GetStringWidth($date);
+        $cellleft = (($right + $left) / 2) - ($stringWidth / 2);
+        $this->napdf_instance->SetXY($cellleft, $y);
+        $this->napdf_instance->Cell(0, 0, $date);
+        $y += 0.1;
+        
+        // Credits - only if not empty
+        $credits = trim($this->credits_string);
+        if (!empty($credits) && $credits !== ' ') {
+            $this->napdf_instance->SetFont($this->font, 'B', $fontSize - 0.5);
+            $stringWidth = $this->napdf_instance->GetStringWidth($credits);
+            $cellleft = (($right + $left) / 2) - ($stringWidth / 2);
+            $this->napdf_instance->SetXY($cellleft, $y);
+            $this->napdf_instance->Cell(0, 0, $credits);
+            $y += 0.2;
+        } else {
+            $y += 0.1;  // Small spacing even if empty
+        }
+        
+        // Banner 1 - only if not empty
+        $banner1 = trim($this->banner_1_string);
+        if (!empty($banner1) && $banner1 !== ' ') {
+            $this->napdf_instance->SetFont($this->font, 'B', ($fontSize + 7));
+            $stringWidth = $this->napdf_instance->GetStringWidth($banner1);
+            $cellleft = (($right + $left) / 2) - ($stringWidth / 2);
+            $this->napdf_instance->SetXY($cellleft, $y);
+            $this->napdf_instance->Cell(0, 0, $banner1);
+            $y += 0.2;
+        }
+        
+        // Banner 2 and 3 - only if at least one is not empty
+        $banner_combined = trim($this->banner_2_string . ' ' . $this->banner_3_string);
+        if (!empty($banner_combined) && $banner_combined !== ' ') {
+            $this->napdf_instance->SetFont($this->font, 'B', $fontSize + 1);
+            $stringWidth = $this->napdf_instance->GetStringWidth($banner_combined);
+            $cellleft = (($right + $left) / 2) - ($stringWidth / 2);
+            $this->napdf_instance->SetXY($cellleft, $y);
+            $this->napdf_instance->Cell(0, 0, $banner_combined);
+            $y += 0.2;
+        }
+        
+        // Logo/Image - only if file exists
+        $y += 0.125;
+        if (!empty($this->image_path_string) && file_exists(dirname(__FILE__) . '/' . $this->image_path_string)) {
+            $title_left = (($right - $left) / 2) - ($titleGraphicSize / 2);
+            $this->napdf_instance->Image($inTitleGraphic, $left + $title_left, $y, $titleGraphicSize, $titleGraphicSize, 'PNG');
+            $y += $titleGraphicSize;
+        }
+        $y += 0.125;
+        
+        // Website URL - only if not empty
+        $webUrl = trim($this->web_uri_string);
+        if (!empty($webUrl) && $webUrl !== ' ') {
+            $this->napdf_instance->SetFont($this->font, 'B', $fontSize + 2);
+            $stringWidth = $this->napdf_instance->GetStringWidth($webUrl);
+            $cellleft = (($right + $left) / 2) - ($stringWidth / 2);
+            $this->napdf_instance->SetXY($cellleft, $y);
+            $this->napdf_instance->Cell(0, 0, $webUrl);
+            $y += 0.2;
+        }
+        
+        // Helpline - only if not empty
+        $helpline = trim($this->helpline_string);
+        if (!empty($helpline) && $helpline !== ' ') {
+            $this->napdf_instance->SetFont($fontFamily, '', ($fontSize + 2));
+            $stringWidth = $this->napdf_instance->GetStringWidth($helpline);
+            $cellleft = (($right + $left) / 2) - ($stringWidth / 2);
+            $this->napdf_instance->SetXY($cellleft, $y);
+            $this->napdf_instance->Cell(0, 0, $helpline);
+            $y += 0.2;
+        }
+        
+        $this->napdf_instance->SetFont($this->font, 'B', $this->font_size + 1);
+        
+        // Format legend - use current Y position plus small margin
+        $this->DrawFormats($left, $y + 0.15, $right, $bottom, $this->napdf_instance->format_data, false, true);
     }
 }
