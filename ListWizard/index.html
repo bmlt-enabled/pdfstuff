@@ -51,50 +51,214 @@
                 };
             };
             
-            function handleGimme() {
-                if (findGetParameter('GIMME')) {
+            // Load servers on page load
+            window.addEventListener('DOMContentLoaded', function() {
+                loadServers();
+            });
+            
+            function loadServers() {
+                const select = document.getElementById('server-select');
+                
+                fetch('api/config.php?action=servers')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Server returned ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(servers => {
+                        if (!Array.isArray(servers) || servers.length === 0) {
+                            throw new Error('No servers available');
+                        }
+                        
+                        // Clear loading option
+                        select.innerHTML = '<option value="">-- Select a server --</option>';
+                        
+                        // Add all servers (already alphabetized from backend)
+                        servers.forEach(server => {
+                            const option = document.createElement('option');
+                            option.value = server.url;
+                            option.textContent = server.name;
+                            select.appendChild(option);
+                        });
+                        
+                        console.log('Loaded ' + servers.length + ' servers');
+                    })
+                    .catch(error => {
+                        console.error('Error loading servers:', error);
+                        select.innerHTML = '<option value="">Error loading servers - please refresh</option>';
+                        alert('Failed to load server list: ' + error.message + '\nPlease refresh the page.');
+                    });
+            }
+            
+            // Handle server selection
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('server-select').addEventListener('change', function() {
+                    const serverUrl = this.value;
+                    if (!serverUrl) {
+                        document.getElementById('service-bodies-container').style.display = 'none';
+                        document.getElementById('settings-container').style.display = 'none';
+                        return;
+                    }
+                    
+                    loadServiceBodies(serverUrl);
+                });
+            });
+            
+            function loadServiceBodies(serverUrl) {
+                const container = document.getElementById('service-bodies-container');
+                const list = document.getElementById('service-bodies-list');
+                const settingsContainer = document.getElementById('settings-container');
+                
+                container.style.display = 'block';
+                list.style.display = 'block';
+                list.innerHTML = '<p style="color:#666;padding:1em;grid-column:1/-1;">Loading service bodies from server...</p>';
+                settingsContainer.style.display = 'none';
+                
+                const formData = new FormData();
+                formData.append('server_url', serverUrl);
+                
+                fetch('api/config.php?action=service_bodies', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Server returned ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(serviceBodies => {
+                    if (serviceBodies.error) {
+                        throw new Error(serviceBodies.error);
+                    }
+                    
+                    if (!Array.isArray(serviceBodies) || serviceBodies.length === 0) {
+                        list.innerHTML = '<p style="color:#666;padding:1em;grid-column:1/-1;">No service bodies found on this server.</p>';
+                        return;
+                    }
+                    
+                    list.innerHTML = '';
+                    console.log('Loaded ' + serviceBodies.length + ' service bodies');
+                    
+                    serviceBodies.forEach(sb => {
+                        const label = document.createElement('label');
+                        label.style.display = 'block';
+                        label.style.marginBottom = '0.3em';
+                        label.style.padding = '0.2em';
+                        label.style.cursor = 'pointer';
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.name = 'service_bodies[]';
+                        checkbox.value = sb.id;
+                        checkbox.className = 'service-body-checkbox';
+                        checkbox.style.marginRight = '0.5em';
+                        
+                        label.appendChild(checkbox);
+                        label.appendChild(document.createTextNode(sb.name));
+                        
+                        list.appendChild(label);
+                    });
+                    
+                    // Add select all/none buttons
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.style.marginTop = '0.5em';
+                    buttonContainer.style.paddingTop = '0.5em';
+                    buttonContainer.style.borderTop = '1px solid #ccc';
+                    buttonContainer.style.gridColumn = '1 / -1';
+                    
+                    const selectAllBtn = document.createElement('button');
+                    selectAllBtn.type = 'button';
+                    selectAllBtn.textContent = 'Select All';
+                    selectAllBtn.style.marginRight = '0.5em';
+                    selectAllBtn.onclick = function() {
+                        document.querySelectorAll('.service-body-checkbox').forEach(cb => cb.checked = true);
+                    };
+                    
+                    const selectNoneBtn = document.createElement('button');
+                    selectNoneBtn.type = 'button';
+                    selectNoneBtn.textContent = 'Select None';
+                    selectNoneBtn.onclick = function() {
+                        document.querySelectorAll('.service-body-checkbox').forEach(cb => cb.checked = false);
+                    };
+                    
+                    buttonContainer.appendChild(selectAllBtn);
+                    buttonContainer.appendChild(selectNoneBtn);
+                    list.appendChild(buttonContainer);
+                    
+                    settingsContainer.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error loading service bodies:', error);
+                    list.innerHTML = '<p style="color:red;padding:1em;grid-column:1/-1;">Failed to load service bodies: ' + error.message + '<br>Please try selecting a different server.</p>';
+                });
+            }
+            
+            // Handle form submission
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.getElementById('pickerForm');
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Validate selections
+                    const serverUrl = document.getElementById('server-select').value;
+                    if (!serverUrl) {
+                        alert('Please select a BMLT server');
+                        return false;
+                    }
+                    
+                    const checkedBoxes = document.querySelectorAll('.service-body-checkbox:checked');
+                    if (checkedBoxes.length === 0) {
+                        alert('Please select at least one service body');
+                        return false;
+                    }
+                    
+                    // Show loading
                     document.getElementById('throbber-container').style.display = 'block';
                     document.getElementById('pickerForm').style.display = 'none';
                     
-                    var pages = null;
-                    var columns = null;
+                    // Build form data
+                    const formData = new FormData(form);
                     
-                    var uri = 'printed_lists/index.php?layout=';
+                    // Add use_list=generic
+                    formData.append('use_list', 'generic');
                     
-                    switch(findGetParameter('layout')) {
-                        case 'two-fold-tabloid':
-                            uri += 'two-fold-tabloid';
-                            columns = parseInt(findGetParameter('columns'));
-                        break;
-                        case 'two-fold-us-legal':
-                            uri += 'two-fold-us-legal';
-                            columns = parseInt(findGetParameter('columns'));
-                        break;
-                        case 'two-fold-us-letter':
-                            uri += 'two-fold-us-letter';
-                        break;
-                        case 'chapbook':
-                            uri += 'chapbook';
-                            pages = parseInt(findGetParameter('pages-small'));
-                            columns = parseInt(findGetParameter('columns'));
-                        break;
-                        case 'booklet':
-                            uri = 'printed_lists/index.php?use_list=gnyr&layout=booklet';
-                            pages = parseInt(findGetParameter('pages-large'));
-                            columns = parseInt(findGetParameter('columns'));
-                        break;
-                    };
+                    // Submit via POST to support all parameters
+                    fetch('printed_lists/index.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.blob())
+                    .then(blob => {
+                        // Create download link
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'meeting_list.pdf';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        
+                        // Hide throbber and show form again
+                        document.getElementById('throbber-container').style.display = 'none';
+                        document.getElementById('pickerForm').style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Error generating PDF:', error);
+                        alert('Failed to generate PDF. Please try again.');
+                        document.getElementById('throbber-container').style.display = 'none';
+                        document.getElementById('pickerForm').style.display = 'block';
+                    });
                     
-                    if (columns) {
-                        uri += '&columns=' + columns;
-                    }
-                    
-                    if (pages) {
-                        uri += '&pages=' + pages;
-                    }
-                   
-                    location.href=uri;
-                };
+                    return false;
+                });
+            });
+            
+            function handleGimme() {
+                // This function is no longer needed as we use form submit event
+                // Kept for backward compatibility with existing layout logic
             };
             
         </script>
@@ -168,13 +332,81 @@
             }
         </style>
     </head>
-    <body onload="handleGimme()">
+    <body>
         <div id="throbber-container" style="display:none">
             <img src="images/throbber.gif" alt="throbber" style="position:absolute;width:190px;top:50%;left:50%;margin-top:-95px;margin-left:-95px" />
         </div>
-        <form action="" method="GET" id="pickerForm"">
+        <form action="#" method="POST" id="pickerForm">
             <div class="formContents">
                 <h1>Create A Meeting List PDF</h1>
+                
+                <!-- Server Selection -->
+                <div class="bottom-container" style="margin-bottom:1.5em;">
+                    <label for="server-select" style="display:block;margin-bottom:0.5em;font-weight:bold;">Select BMLT Server:</label>
+                    <select id="server-select" name="server_url" style="width:100%;padding:0.5em;" required>
+                        <option value="">-- Select a server --</option>
+                    </select>
+                </div>
+                
+                <!-- Service Bodies Selection -->
+                <div id="service-bodies-container" class="bottom-container" style="display:none;margin-bottom:1.5em;">
+                    <label style="display:block;margin-bottom:0.5em;font-weight:bold;">Service Bodies:</label>
+                    <div id="service-bodies-list" style="max-height:200px;overflow-y:auto;border:1px solid #ccc;padding:0.5em;background:#fff;display:grid;grid-template-columns: 1fr 1fr;gap: 0.25em 1em;align-items:start;text-align:left;">
+                        <p style="color:#666;">Loading...</p>
+                    </div>
+                    <label style="display:block;margin-top:0.5em;">
+                        <input type="checkbox" name="recursive" value="1" id="recursive-checkbox" />
+                        Include child service bodies
+                    </label>
+                </div>
+                
+                <!-- Settings Panel -->
+                <div id="settings-container" class="bottom-container" style="display:none;margin-bottom:1.5em;">
+                    <details>
+                        <summary style="font-weight:bold;cursor:pointer;margin-bottom:0.5em;">Custom Settings (Optional)</summary>
+                        <div style="padding:1em;border:1px solid #ddd;background:#f9f9f9;">
+                            <div style="margin-bottom:0.5em;">
+                                <label for="helpline" style="display:block;font-size:0.9em;">Helpline:</label>
+                                <input type="text" id="helpline" name="helpline" placeholder="e.g., Helpline: (555) 123-4567" style="width:100%;padding:0.3em;" />
+                            </div>
+                            <div style="margin-bottom:0.5em;">
+                                <label for="banner_1" style="display:block;font-size:0.9em;">Banner Line 1:</label>
+                                <input type="text" id="banner_1" name="banner_1" value="NA Meetings" style="width:100%;padding:0.3em;" />
+                            </div>
+                            <div style="margin-bottom:0.5em;">
+                                <label for="banner_2" style="display:block;font-size:0.9em;">Banner Line 2:</label>
+                                <input type="text" id="banner_2" name="banner_2" placeholder="Optional" style="width:100%;padding:0.3em;" />
+                            </div>
+                            <div style="margin-bottom:0.5em;">
+                                <label for="banner_3" style="display:block;font-size:0.9em;">Banner Line 3:</label>
+                                <input type="text" id="banner_3" name="banner_3" placeholder="Optional" style="width:100%;padding:0.3em;" />
+                            </div>
+                            <div style="margin-bottom:0.5em;">
+                                <label for="credits" style="display:block;font-size:0.9em;">Credits:</label>
+                                <input type="text" id="credits" name="credits" placeholder="e.g., Printed by Your Area" style="width:100%;padding:0.3em;" />
+                            </div>
+                            <div style="margin-bottom:0.5em;">
+                                <label for="web_url" style="display:block;font-size:0.9em;">Website URL:</label>
+                                <input type="text" id="web_url" name="web_url" placeholder="e.g., https://yourarea.org" style="width:100%;padding:0.3em;" />
+                            </div>
+                            <div style="margin-bottom:0.5em;">
+                                <label for="week_starts" style="display:block;font-size:0.9em;">Week Starts On:</label>
+                                <select id="week_starts" name="week_starts" style="width:100%;padding:0.3em;">
+                                    <option value="1">Sunday</option>
+                                    <option value="2" selected>Monday</option>
+                                </select>
+                            </div>
+                            <div style="margin-bottom:0.5em;">
+                                <label for="group_by" style="display:block;font-size:0.9em;">Group Meetings By:</label>
+                                <select id="group_by" name="group_by" style="width:100%;padding:0.3em;">
+                                    <option value="weekday" selected>Day of Week (Monday, Tuesday, etc.)</option>
+                                    <option value="city">City/Town</option>
+                                </select>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                
                 <div class="layout-container" style="text-align:center;padding:0;margin-right:1.5em">
                     <div class="selectionLine">
                         <h3>Two-Fold</h4>
