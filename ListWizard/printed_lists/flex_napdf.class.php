@@ -84,7 +84,25 @@ class flex_napdf extends printableList
         $this->orientation = 'P';
 
         if (isset($in_http_vars['layout']) && $in_http_vars['layout']) {
-            if ('two-fold-tabloid' == strtolower($in_http_vars['layout'])) {
+            if ('tri-fold-portrait' == strtolower($in_http_vars['layout']) || 'tri-fold' == strtolower($in_http_vars['layout'])) {
+                $this->units = 'in';            ///< The measurement units (inches)
+                $this->page_x = 8.5;            ///< The width, in measurement units, of each page
+                $this->page_y = 11;             ///< The height, in measurement units, of each page.
+                $this->orientation = 'P';       ///< Portrait orientation
+                $this->list_page_sections = 3;  ///< We always have 3 columns.
+                $this->page_max = 2;            ///< Default to 2 pages (front and back)
+                unset($in_http_vars['orientation']);    ///< We ignore orientation.
+                unset($in_http_vars['columns']);        ///< We ignore columns.
+            } elseif ('tri-fold-landscape' == strtolower($in_http_vars['layout'])) {
+                $this->units = 'in';            ///< The measurement units (inches)
+                $this->page_x = 11;             ///< The width, in measurement units, of each page
+                $this->page_y = 8.5;            ///< The height, in measurement units, of each page.
+                $this->orientation = 'L';       ///< Landscape orientation
+                $this->list_page_sections = 3;  ///< We always have 3 columns.
+                $this->page_max = 2;            ///< Default to 2 pages (front and back)
+                unset($in_http_vars['orientation']);    ///< We ignore orientation.
+                unset($in_http_vars['columns']);        ///< We ignore columns.
+            } elseif ('two-fold-tabloid' == strtolower($in_http_vars['layout'])) {
                 $this->units = 'in';            ///< The measurement units (inches)
                 $this->page_x = 8.5;            ///< The width, in measurement units, of each page
                 $this->page_y = 11;             ///< The height, in measurement units, of each page.

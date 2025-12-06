@@ -13,6 +13,8 @@ class generic_napdf extends flex_napdf
 {
     // grouping mode: 'weekday' (default) or 'city'
     public $group_by = 'weekday';
+    // whether to include QR codes for virtual/hybrid meetings
+    public $include_qr = false;
     /**
      * Constructor accepts configuration from HTTP parameters
      * 
@@ -62,6 +64,9 @@ class generic_napdf extends flex_napdf
         
         // Store grouping preference for use in rendering
         $this->group_by = $groupBy;
+        
+        // QR code setting
+        $this->include_qr = isset($in_http_vars['include_qr']) && $in_http_vars['include_qr'] == '1';
         
         // Set sort order based on grouping
         if ($groupBy === 'city') {
@@ -225,5 +230,265 @@ class generic_napdf extends flex_napdf
         $this->napdf_instance->Cell(0, $height, $header);
 
         return $top + $height;
+    }
+    
+    // Override DrawOneMeeting to add QR codes for virtual meetings
+    public function DrawOneMeeting($left, $top, $column_width, $meeting)
+    {
+        // Check if we should show QR code (only if virtual_meeting_link is present)
+        $hasVirtualLink = isset($meeting['virtual_meeting_link']) && !empty(trim($meeting['virtual_meeting_link']));
+        $qrSize = 0.4; // QR code size in inches
+        $qrMargin = 0.05;
+        
+        // Adjust column width if we need space for QR code
+        if ($this->include_qr && $hasVirtualLink) {
+            $availableWidth = $column_width - $qrSize - $qrMargin;
+        } else {
+            $availableWidth = $column_width;
+        }
+        
+        $startY = $top;
+        
+        // Draw meeting info with adjusted width
+        $fontFamily = $this->napdf_instance->getFontFamily();
+        $fontSize = $this->font_size - 1.5;
+        $fSize = $fontSize / 70;
+        
+        $this->napdf_instance->SetFillColor(255);
+        $this->napdf_instance->SetTextColor(0);
+        $this->napdf_instance->SetFont($fontFamily, 'B', $fontSize);
+        
+        // City
+        $display_string = $meeting['location_municipality'];
+        $this->napdf_instance->SetY($top);
+        $this->napdf_instance->SetX($left);
+        $this->napdf_instance->MultiCell($availableWidth, $fSize, mb_convert_encoding($display_string, 'ISO-8859-1', 'UTF-8'), 0, 'L');
+        
+        // Time
+        $display_string = '';
+        if (isset($meeting['start_time'])) {
+            $display_string = printableList::translate_time($meeting['start_time']);
+        }
+        if (isset($meeting['duration_time']) && $meeting['duration_time'] && ('01:30:00' != $meeting['duration_time'])) {
+            $display_string .= " (" . printableList::translate_duration($meeting['duration_time']) . ")";
+        }
+        $this->napdf_instance->SetX($left);
+        $this->napdf_instance->MultiCell($availableWidth, $fSize, mb_convert_encoding($display_string, 'ISO-8859-1', 'UTF-8'));
+        
+        // Meeting name and formats
+        $display_string = isset($meeting['meeting_name']) ? $meeting['meeting_name'] : '';
+        if (isset($meeting['formats'])) {
+            $display_string .= " (" . $this->RearrangeFormats($meeting['formats']) . ")";
+        }
+        $this->napdf_instance->SetX($left);
+        $this->napdf_instance->MultiCell($availableWidth, $fSize, mb_convert_encoding($display_string, 'ISO-8859-1', 'UTF-8'), 0, 'L');
+        
+        $this->napdf_instance->SetFont($fontFamily, '', $fontSize);
+        
+        // Location details
+        if (isset($meeting['location_neighborhood']) && $meeting['location_neighborhood']) {
+            $display_string = $meeting['location_neighborhood'];
+            $this->napdf_instance->SetX($left);
+            $this->napdf_instance->MultiCell($availableWidth, $fSize, mb_convert_encoding($display_string, 'ISO-8859-1', 'UTF-8'), 0, 'L');
+        }
+        
+        $display_string = '';
+        if (isset($meeting['location_text']) && $meeting['location_text']) {
+            $display_string .= $meeting['location_text'];
+        }
+        if (isset($meeting['location_info']) && $meeting['location_info']) {
+            if ($display_string) $display_string .= ', ';
+            $display_string .= " (" . $meeting['location_info'] . ")";
+        }
+        if ($display_string) $display_string .= ', ';
+        $display_string .= isset($meeting['location_street']) ? $meeting['location_street'] : '';
+        
+        $this->napdf_instance->SetX($left);
+        $this->napdf_instance->MultiCell($availableWidth, $fSize, mb_convert_encoding($display_string, 'ISO-8859-1', 'UTF-8'), 0, 'L');
+        
+        // Virtual meeting info (additional info and phone number, not the URL - that's what the QR code is for)
+        $virtualParts = [];
+        
+        // Add additional info if present
+        if (isset($meeting['virtual_meeting_additional_info']) && !empty(trim($meeting['virtual_meeting_additional_info']))) {
+            $virtualParts[] = trim($meeting['virtual_meeting_additional_info']);
+        }
+        
+        // Add phone number if present
+        if (isset($meeting['phone_meeting_number']) && !empty(trim($meeting['phone_meeting_number']))) {
+            $virtualParts[] = 'Phone: ' . trim($meeting['phone_meeting_number']);
+        }
+        
+        // Display virtual info if we have any
+        if (!empty($virtualParts)) {
+            $virtualText = 'Virtual: ' . implode(' - ', $virtualParts);
+            $this->napdf_instance->SetFont($fontFamily, 'I', $fontSize - 1);
+            $this->napdf_instance->SetX($left);
+            $this->napdf_instance->MultiCell($availableWidth, $fSize, mb_convert_encoding($virtualText, 'ISO-8859-1', 'UTF-8'), 0, 'L');
+        } elseif ($hasVirtualLink) {
+            // Fallback: if we have a link but no additional info, just show "Virtual" (QR code will have the URL)
+            $virtualText = 'Virtual meeting (scan QR code)';
+            $this->napdf_instance->SetFont($fontFamily, 'I', $fontSize - 1);
+            $this->napdf_instance->SetX($left);
+            $this->napdf_instance->MultiCell($availableWidth, $fSize, mb_convert_encoding($virtualText, 'ISO-8859-1', 'UTF-8'), 0, 'L');
+        }
+        
+        // Comments
+        $desc = '';
+        if (isset($meeting['comments']) && $meeting['comments']) {
+            $desc .= $meeting['comments'];
+        }
+        $desc = preg_replace("/[\n|\r]/", ", ", $desc);
+        $desc = preg_replace("/,\s*,/", ",", $desc);
+        $desc = stripslashes(stripslashes($desc));
+        
+        if ($desc) {
+            $fSizeSmall = ($fontSize - 1) / 70;
+            $this->napdf_instance->SetFont($fontFamily, 'I', $fontSize - 1);
+            $this->napdf_instance->SetX($left);
+            $this->napdf_instance->MultiCell($availableWidth, $fSizeSmall, mb_convert_encoding($desc, 'ISO-8859-1', 'UTF-8'));
+        }
+        
+        // Draw QR code if enabled and virtual_meeting_link is present
+        if ($this->include_qr && $hasVirtualLink) {
+            $qrX = $left + $availableWidth + $qrMargin;
+            $this->drawQRCode($meeting['virtual_meeting_link'], $qrX, $startY, $qrSize);
+        }
+        
+        return $this->napdf_instance->GetY();
+    }
+    
+    
+    private function drawQRCode($url, $x, $y, $size)
+    {
+        try {
+            // Use a QR code API service (api.qrserver.com is free and doesn't require authentication)
+            $qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($url);
+            
+            // Fetch QR code image
+            $qrData = napdf::call_curl($qrApiUrl, false);
+            
+            if ($qrData) {
+                // Save to temporary file
+                $tempFile = sys_get_temp_dir() . '/qr_' . md5($url . time()) . '.png';
+                file_put_contents($tempFile, $qrData);
+                
+                // Add image to PDF
+                $this->napdf_instance->Image($tempFile, $x, $y, $size, $size, 'PNG');
+                
+                // Clean up
+                @unlink($tempFile);
+            }
+        } catch (Exception $e) {
+            // Silently fail - QR codes are optional
+            error_log('QR Code generation failed: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Override AssemblePDF to handle tri-fold layout specially
+     * For tri-fold, the cover and phone list should only use 1/3 of the page width
+     */
+    public function AssemblePDF()
+    {
+        // Check if this is a tri-fold layout (portrait or landscape)
+        $isTrifoldPortrait = $this->list_page_sections == 3 && 
+                             $this->orientation == 'P' && 
+                             $this->page_x == 8.5 && 
+                             $this->page_y == 11;
+        
+        $isTrifoldLandscape = $this->list_page_sections == 3 && 
+                              $this->orientation == 'L' && 
+                              $this->page_x == 11 && 
+                              $this->page_y == 8.5;
+        
+        $isTrifold = $isTrifoldPortrait || $isTrifoldLandscape;
+        
+        if (!$isTrifold) {
+            // Use parent implementation for non-tri-fold layouts
+            return parent::AssemblePDF();
+        }
+        
+        // Tri-fold specific implementation
+        $meeting_data = $this->napdf_instance->meeting_data;
+        
+        if (!$meeting_data) {
+            return false;
+        }
+        
+        // Calculate panel widths
+        $panelpage['margin'] = $this->page_margins;
+        $panelpage['height'] = $this->page_y - ($this->page_margins * 2);
+        $panelpage['width'] = $this->page_x - ($this->page_margins * 2);
+        
+        // For tri-fold, each panel is 1/3 of the page width
+        $panel_width = ($this->page_x - ($this->page_margins * 2)) / 3;
+        
+        foreach ($meeting_data as &$meeting) {
+            if (isset($meeting['location_text']) && isset($meeting['location_street'])) {
+                $meeting['location'] = $meeting['location_text'] . ', ' . $meeting['location_street'];
+            }
+        }
+        
+        $fixed_font_size = $this->font_size;
+        $variable_font_size = $this->font_size + 2;
+        
+        // First page: Cover (1/3) + Phone List (1/3) + Meetings (1/3)
+        $this->napdf_instance->AddPage();
+        
+        $this->pos['end'] = false;
+        $this->pos['start'] = true;
+        $this->pos['count'] = 0;
+        
+        // Panel 1 (left): Cover/Front Panel - 1/3 width
+        $cover_left = $this->page_margins;
+        $cover_right = $cover_left + $panel_width;
+        $this->DrawFrontPanel(
+            $fixed_font_size,
+            $cover_left,
+            $this->page_margins,
+            $cover_right,
+            $this->page_y - $this->page_margins
+        );
+        
+        // Panel 2 (middle): Phone List - 1/3 width
+        $phone_left = $cover_right + $this->page_margins;
+        $phone_right = $phone_left + $panel_width;
+        $this->DrawRearPanel(
+            $fixed_font_size,
+            $phone_left,
+            $this->page_margins,
+            $phone_right,
+            $this->page_y - $this->page_margins
+        );
+        
+        // Panel 3 (right): Start meetings - 1/3 width (1 column)
+        $meetings_left = $phone_right + $this->page_margins;
+        $meetings_right = $this->page_x - $this->page_margins;
+        $this->font_size = $variable_font_size;
+        $this->DrawListPage(
+            $meetings_left,
+            $this->page_margins,
+            $meetings_right,
+            $this->page_y - $this->page_margins,
+            0, // no margin between columns since we only have 1
+            1  // 1 column for this panel
+        );
+        
+        // Subsequent pages: 3 columns of meetings
+        while (!$this->pos['end']) {
+            $this->napdf_instance->AddPage();
+            $this->font_size = $variable_font_size;
+            $this->DrawListPage(
+                $this->page_margins,
+                $this->page_margins,
+                $this->page_x - $this->page_margins,
+                $this->page_y - $this->page_margins,
+                $this->page_margins,
+                3  // 3 columns
+            );
+        }
+        
+        return true;
     }
 }

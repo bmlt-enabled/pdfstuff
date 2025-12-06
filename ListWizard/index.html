@@ -19,7 +19,11 @@
                     document.getElementById('throbber-container').style.display = 'none';
                     document.getElementById('pickerForm').style.display = 'block';
                     
-                    if (document.getElementById('two-fold-tabloid').checked) {
+                    // Check for tri-fold layouts - hide columns for these
+                    if (document.getElementById('tri-fold-portrait').checked || document.getElementById('tri-fold-landscape').checked) {
+                        document.getElementById('column-container').style.display = 'none';
+                        document.getElementById('pages-container').style.display = 'none';
+                    } else if (document.getElementById('two-fold-tabloid').checked) {
                         document.getElementById('column-container').style.display = 'block';
                         document.getElementById('moreColumns').style.display = 'none';
                         document.getElementById('pages-container').style.display = 'none';
@@ -392,8 +396,8 @@
                             <div style="margin-bottom:0.5em;">
                                 <label for="week_starts" style="display:block;font-size:0.9em;">Week Starts On:</label>
                                 <select id="week_starts" name="week_starts" style="width:100%;padding:0.3em;">
-                                    <option value="1">Sunday</option>
-                                    <option value="2" selected>Monday</option>
+                                    <option value="1" selected>Sunday</option>
+                                    <option value="2">Monday</option>
                                 </select>
                             </div>
                             <div style="margin-bottom:0.5em;">
@@ -403,17 +407,44 @@
                                     <option value="city">City/Town</option>
                                 </select>
                             </div>
+                            <div style="margin-bottom:0.5em;">
+                                <label style="display:flex;align-items:center;cursor:pointer;">
+                                    <input type="checkbox" name="include_qr" value="1" style="margin-right:0.5em;" />
+                                    <span style="font-size:0.9em;">Include QR codes for virtual/hybrid meetings</span>
+                                </label>
+                            </div>
                         </div>
                     </details>
                 </div>
                 
                 <div class="layout-container" style="text-align:center;padding:0;margin-right:1.5em">
                     <div class="selectionLine">
+                        <h3>Tri-Fold</h4>
+                        <div class="selectionBlock" style="width:50%">
+                            <h4>Portrait (Long)</h4>
+                            <div class="choiceBlock">
+                                <input type="radio" name="layout" value="tri-fold-portrait" id="tri-fold-portrait" checked="checked" onchange="evaluateUI()" />
+                                <label for="tri-fold-portrait" class="thumbnail-label">
+                                    <img src="images/USLetterTwoFold.png" alt="Tri-fold Portrait Icon" height="48px" class="thumbnail" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="selectionBlock" style="width:50%">
+                            <h4>Landscape (Wide)</h4>
+                            <div class="choiceBlock">
+                                <input type="radio" name="layout" value="tri-fold-landscape" id="tri-fold-landscape" onchange="evaluateUI()" />
+                                <label for="tri-fold-landscape" class="thumbnail-label">
+                                    <img src="images/USLegalTwoFold.png" alt="Tri-fold Landscape Icon" height="48px" class="thumbnail" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="selectionLine" style="padding-top:0.5em">
                         <h3>Two-Fold</h4>
                         <div class="selectionBlock" style="width:33%">
                             <h4>Tabloid</h4>
                             <div class="choiceBlock">
-                                <input type="radio" name="layout" value="two-fold-tabloid" id="two-fold-tabloid" checked="checked" onchange="evaluateUI()" />
+                                <input type="radio" name="layout" value="two-fold-tabloid" id="two-fold-tabloid" onchange="evaluateUI()" />
                                 <label for="two-fold-tabloid" class="thumbnail-label">
                                     <img src="images/TabloidTwoFold.png" alt="Taboid Icon" width="34px" class="thumbnail" />
                                 </label>
